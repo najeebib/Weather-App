@@ -15,6 +15,9 @@ captures/
 *.apk
 output.json
 
+# Ignore gradle.properties file
+gradle.properties
+
 # IntelliJ
 *.iml
 .idea/
