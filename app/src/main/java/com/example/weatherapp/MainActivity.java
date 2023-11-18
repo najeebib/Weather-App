@@ -21,7 +21,17 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.material.textfield.TextInputEditText;
+import com.squareup.picasso.Picasso;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -141,8 +151,49 @@ public class MainActivity extends AppCompatActivity {
                 double longitude = addresses.get(0).getLongitude();
                 double[] coords = new double[]{latitude, longitude};
                 String apiKey = System.getenv("OpenWeatherMapAppID");
-                String request = "https://api.openweathermap.org/data/3.0/onecall?lat="+String.valueOf(coords[0])+ "&lon="+String.valueOf(coords[0])+"&exclude=minutely,alerts&appid="+apiKey+"&units=metric";
+                String url = "https://api.openweathermap.org/data/3.0/onecall?lat="+String.valueOf(coords[0])+ "&lon="+String.valueOf(coords[0])+"&exclude=minutely,alerts&appid="+apiKey+"&units=metric";
+                cityNameTV.setText(cityName);
 
+                RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+
+                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        loadingPB.setVisibility(View.GONE);
+                        homeRL.setVisibility(View.VISIBLE);
+                        WeatherList.clear();
+                        try {
+                            String temp = response.getJSONObject("current").getString("temp");
+                            tempTV.setText(temp+ "°C");
+                            long dt =response.getJSONObject("current").getLong("dt");
+                            long sunrise =response.getJSONObject("current").getLong("sunrise");
+                            long sunset =response.getJSONObject("current").getLong("sunset");
+                            String iconCode = response.getJSONObject("current").getJSONArray("weather").getJSONObject(0).getString("icon");
+                            String condition = response.getJSONObject("current").getJSONArray("weather").getJSONObject(0).getString("main");
+                            conditionTV.setText(condition);
+                            Picasso.get().load("https://openweathermap.org/img/wn/" + iconCode + "@2x.png").into(iconIV);
+                            boolean isDay;
+                            if(dt-sunrise>0 && dt-sunset<0)
+                            {
+                                Picasso.get().load("https://images.unsplash.com/photo-1603883055407-968560f7522e?q=80&w=1901&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D").into(backIV);
+                            }
+                            else
+                            {
+                                Picasso.get().load("https://images.unsplash.com/photo-1507502707541-f369a3b18502?q=80&w=1976&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D").into(backIV);
+                            }
+                            
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Toast.makeText(MainActivity.this,"Please enter valid city name",Toast.LENGTH_SHORT).show();
+                    }
+                });
+                requestQueue.add(jsonObjectRequest);
 
             }
         }

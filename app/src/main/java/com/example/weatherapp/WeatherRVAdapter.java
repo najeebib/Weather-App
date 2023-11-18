@@ -42,7 +42,7 @@ public class WeatherRVAdapter extends RecyclerView.Adapter<WeatherRVAdapter.View
     @Override
     public void onBindViewHolder(@NonNull WeatherRVAdapter.ViewHolder holder, int position) {
         WeatherRVModal modal = weatherList.get(position);
-        String s = "https://openweathermap.org/img/wn/".concat(modal.getIcon() + "@2x.png");
+        String s = "https://openweathermap.org/img/wn/" + modal.getIcon() + "@2x.png";
         long timestamp = modal.getTime() * 1000;
         String formattedTime = convertTimestampToTime(timestamp);
         holder.time.setText(formattedTime);
