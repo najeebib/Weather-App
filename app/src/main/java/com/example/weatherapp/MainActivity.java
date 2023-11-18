@@ -1,16 +1,25 @@
 package com.example.weatherapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.location.Address;
 import android.location.Geocoder;
+import android.widget.Toast;
 
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -29,7 +38,9 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView weatherRV;
     private ArrayList<WeatherRVModal> WeatherList;
     private WeatherRVAdapter WeatherAdapter;
-
+    private LocationManager locationManager;
+    private int location_permission = 1;
+    private String CityName;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,9 +60,76 @@ public class MainActivity extends AppCompatActivity {
         WeatherAdapter = new WeatherRVAdapter(this,WeatherList);
         weatherRV.setAdapter(WeatherAdapter);
 
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED&&
+                ActivityCompat.checkSelfPermission(this,android.Manifest.permission.ACCESS_COARSE_LOCATION)!= PackageManager.PERMISSION_GRANTED)
+        {
+            ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},location_permission);
+        }
+        Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        CityName = getCityName(location.getLongitude(),location.getLatitude());
+        getWeatherInfo(CityName);
 
+        searchIV.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String city = cityEdt.getText().toString();
+                if(city.isEmpty())
+                    Toast.makeText(MainActivity.this,"Enter city name",Toast.LENGTH_SHORT).show();
+                else
+                {
+                    CityName = city;
+                    getWeatherInfo(city);
+
+                }
+
+            }
+        });
 
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(requestCode==location_permission)
+        {
+            if(grantResults.length>0 && grantResults[0]==PackageManager.PERMISSION_GRANTED)
+                Toast.makeText(this,"Permission granted",Toast.LENGTH_SHORT).show();
+            else
+            {
+                Toast.makeText(this,"Please provide permissions",Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+    }
+
+    private String getCityName(double lon, double lat)
+    {
+        String name = "NotFound";
+        Geocoder gcd = new Geocoder(getApplicationContext(), Locale.getDefault());
+        try{
+            List<Address> addresses = gcd.getFromLocation(lat,lon,10);
+
+            for(Address adr: addresses)
+            {
+                if(adr != null)
+                {
+                    String city = adr.getLocality();
+                    if(city != null && !city.equals(""))
+                        name = city;
+                    else{
+                        Log.d("tag","city not found");
+                        Toast.makeText(this,"USer city not found",Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return name;
+    }
+
     private void getWeatherInfo(String cityName)
     {
         List<Address> addresses;
