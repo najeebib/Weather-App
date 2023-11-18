@@ -41,7 +41,6 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     private RelativeLayout homeRL;
-    private ProgressBar loadingPB;
     private TextView cityNameTV,tempTV,conditionTV;
     private TextInputEditText cityEdt;
     private ImageView backIV,iconIV,searchIV;
@@ -57,7 +56,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         homeRL = findViewById(R.id.idRLHome);
-        loadingPB = findViewById(R.id.idLoading);
         cityNameTV = findViewById(R.id.idTVCityName);
         tempTV = findViewById(R.id.idtemp);
         conditionTV = findViewById(R.id.idTVCondition); 
@@ -70,15 +68,11 @@ public class MainActivity extends AppCompatActivity {
         WeatherAdapter = new WeatherRVAdapter(this,WeatherList);
         weatherRV.setAdapter(WeatherAdapter);
 
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED&&
                 ActivityCompat.checkSelfPermission(this,android.Manifest.permission.ACCESS_COARSE_LOCATION)!= PackageManager.PERMISSION_GRANTED)
         {
             ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},location_permission);
         }
-        Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        CityName = getCityName(location.getLongitude(),location.getLatitude());
-        getWeatherInfo(CityName);
 
         searchIV.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -149,18 +143,18 @@ public class MainActivity extends AppCompatActivity {
             if (addresses != null && !addresses.isEmpty()) {
                 double latitude = addresses.get(0).getLatitude();
                 double longitude = addresses.get(0).getLongitude();
-                double[] coords = new double[]{latitude, longitude};
-                String apiKey = System.getenv("OpenWeatherMapAppID");
-                String url = "https://api.openweathermap.org/data/3.0/onecall?lat="+String.valueOf(coords[0])+ "&lon="+String.valueOf(coords[0])+"&exclude=minutely,alerts&appid="+apiKey+"&units=metric";
-                cityNameTV.setText(cityName);
 
+                double[] coords = new double[]{latitude, longitude};
+                String apiKey =  getResources().getString(R.string.api_endpoint);
+                String url = "https://api.openweathermap.org/data/3.0/onecall?lat="+ coords[0] + "&lon="+ coords[0] +"&exclude=minutely,alerts&appid="+apiKey+"&units=metric";
+                cityNameTV.setText(cityName);
+                Toast.makeText(MainActivity.this,"Url: " +url+ ", "+ apiKey,Toast.LENGTH_SHORT).show();
+                Log.d("tag",url + "," + apiKey);
                 RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
 
                 JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        loadingPB.setVisibility(View.GONE);
-                        homeRL.setVisibility(View.VISIBLE);
                         WeatherList.clear();
                         try {
                             String temp = response.getJSONObject("current").getString("temp");
@@ -190,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(MainActivity.this,"Please enter valid city name",Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(MainActivity.this,"Please enter valid city name",Toast.LENGTH_SHORT).show();
                     }
                 });
                 requestQueue.add(jsonObjectRequest);
