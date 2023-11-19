@@ -42,12 +42,11 @@ public class WeatherRVAdapter extends RecyclerView.Adapter<WeatherRVAdapter.View
     @Override
     public void onBindViewHolder(@NonNull WeatherRVAdapter.ViewHolder holder, int position) {
         WeatherRVModal modal = weatherList.get(position);
-        String s = "https://openweathermap.org/img/wn/" + modal.getIcon() + "@2x.png";
         long timestamp = modal.getTime() * 1000;
         String formattedTime = convertTimestampToTime(timestamp);
         holder.time.setText(formattedTime);
         holder.temp.setText(modal.getTemperature()+ "°C");
-        Picasso.get().load(s).into(holder.condition);
+        Picasso.get().load("https://openweathermap.org/img/wn/" + modal.getIcon() + "@2x.png").into(holder.condition);
         holder.wind.setText(modal.getWindspeed() + "Km/h");
     }
 
@@ -62,9 +61,9 @@ public class WeatherRVAdapter extends RecyclerView.Adapter<WeatherRVAdapter.View
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             wind = itemView.findViewById(R.id.idTVWindSpeed);
-            time = itemView.findViewById(R.id.idTVWindSpeed);
+            time = itemView.findViewById(R.id.idTVTime);
             temp = itemView.findViewById(R.id.idTVTemp);
-            condition = itemView.findViewById(R.id.idTVTime);
+            condition = itemView.findViewById(R.id.idIVCondition);
         }
     }
 }

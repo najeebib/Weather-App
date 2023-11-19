@@ -7,12 +7,17 @@
     tools:context=".MainActivity"
     android:background="@color/black_shade_1">
 
-
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/idLoading"
+        android:visibility="visible"
+        android:layout_centerInParent="true" />
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/idRLHome"
-        android:visibility="visible">
+        android:visibility="gone">
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="match_parent"

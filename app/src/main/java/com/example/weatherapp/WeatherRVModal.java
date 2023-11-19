@@ -1,23 +1,23 @@
 package com.example.weatherapp;
 
 public class WeatherRVModal {
-    private Integer time;
+    private Long time;
     private String temperature;
     private String icon;
     private String windspeed;
 
-    public WeatherRVModal(Integer time, String temperature, String icon, String windspeed) {
+    public WeatherRVModal(Long time, String temperature, String icon, String windspeed) {
         this.time = time;
         this.temperature = temperature;
         this.icon = icon;
         this.windspeed = windspeed;
     }
 
-    public Integer getTime() {
+    public Long getTime() {
         return time;
     }
 
-    public void setTime(Integer time) {
+    public void setTime(Long time) {
         this.time = time;
     }
 

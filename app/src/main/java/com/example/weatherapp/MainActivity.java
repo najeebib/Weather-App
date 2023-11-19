@@ -27,9 +27,13 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.textfield.TextInputEditText;
 import com.squareup.picasso.Picasso;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -50,6 +54,9 @@ public class MainActivity extends AppCompatActivity {
     private LocationManager locationManager;
     private int location_permission = 1;
     private String CityName;
+    private FusedLocationProviderClient fusedLocationClient;
+    private ProgressBar loadingPB;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,15 +71,29 @@ public class MainActivity extends AppCompatActivity {
         iconIV = findViewById(R.id.idIVIcon);
         searchIV = findViewById(R.id.idSearch);
         weatherRV = findViewById(R.id.idRVWeather);
-        WeatherList  = new ArrayList<>();
+        WeatherList  = new ArrayList<WeatherRVModal>();
         WeatherAdapter = new WeatherRVAdapter(this,WeatherList);
         weatherRV.setAdapter(WeatherAdapter);
+        loadingPB = findViewById(R.id.idLoading);
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
 
         if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED&&
                 ActivityCompat.checkSelfPermission(this,android.Manifest.permission.ACCESS_COARSE_LOCATION)!= PackageManager.PERMISSION_GRANTED)
         {
             ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},location_permission);
         }
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
+                            getWeatherInfo(location.getLatitude(),location.getLongitude());
+                        }
+                    }
+                });
 
         searchIV.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -107,32 +128,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private String getCityName(double lon, double lat)
-    {
-        String name = "NotFound";
-        Geocoder gcd = new Geocoder(getApplicationContext(), Locale.getDefault());
-        try{
-            List<Address> addresses = gcd.getFromLocation(lat,lon,10);
 
-            for(Address adr: addresses)
-            {
-                if(adr != null)
-                {
-                    String city = adr.getLocality();
-                    if(city != null && !city.equals(""))
-                        name = city;
-                    else{
-                        Log.d("tag","city not found");
-                        Toast.makeText(this,"USer city not found",Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        return name;
-    }
 
     private void getWeatherInfo(String cityName)
     {
@@ -157,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onResponse(JSONObject response) {
                         WeatherList.clear();
                         try {
-                            String temp = response.getJSONObject("current").getString("temp");
+                            String temp = String.valueOf(response.getJSONObject("current").getInt("temp"));
                             tempTV.setText(temp+ "°C");
                             long dt =response.getJSONObject("current").getLong("dt");
                             long sunrise =response.getJSONObject("current").getLong("sunrise");
@@ -175,6 +171,27 @@ public class MainActivity extends AppCompatActivity {
                             {
                                 Picasso.get().load("https://images.unsplash.com/photo-1507502707541-f369a3b18502?q=80&w=1976&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D").into(backIV);
                             }
+                            JSONArray hours = response.optJSONArray("hourly");
+                            if (hours != null) {
+                                int arrayLength = Math.min(hours.length(), 24); // Get the minimum of 24 or the array length
+                                for (int i = 0; i < arrayLength; i++) {
+                                    JSONObject hourObj = hours.optJSONObject(i);
+                                    if (hourObj != null) {
+                                        String hourTemp = String.valueOf(hourObj.optInt("temp"));
+                                        String hourWindSpeed = hourObj.optString("wind_speed");
+                                        String hourIcon = hourObj.getJSONArray("weather").getJSONObject(0).getString("icon");
+                                        Toast.makeText(MainActivity.this,"icon code:" + hourIcon,Toast.LENGTH_SHORT).show();
+                                        Long hourTime = hourObj.optLong("dt");
+                                        WeatherRVModal m = new WeatherRVModal(hourTime,hourTemp,hourIcon,hourWindSpeed);
+                                        WeatherList.add(m);
+                                    }
+                                }
+                                WeatherAdapter.notifyDataSetChanged();
+                            } else {
+                                Log.e("TAG", "No 'hourly' array found in JSON response");
+                            }
+                            loadingPB.setVisibility(View.GONE);
+                            homeRL.setVisibility(View.VISIBLE);
                             
                         } catch (JSONException e) {
                             throw new RuntimeException(e);
@@ -194,6 +211,76 @@ public class MainActivity extends AppCompatActivity {
         catch (IOException e){
             Log.e("GPS error", "Error getting coordinates: " + e.getMessage());
         }
+
+    }
+    private void getWeatherInfo(double latitude,double longitude)
+    {
+
+        double[] coords = new double[]{latitude, longitude};
+        String apiKey =  getResources().getString(R.string.api_endpoint);
+        String url = "https://api.openweathermap.org/data/3.0/onecall?lat="+ coords[0] + "&lon="+ coords[0] +"&exclude=minutely,alerts&appid="+apiKey+"&units=metric";
+        RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+        cityNameTV.setText("");
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                WeatherList.clear();
+                try {
+                    String temp =  String.valueOf(response.getJSONObject("current").getInt("temp"));
+                    tempTV.setText(temp+ "°C");
+                    long dt =response.getJSONObject("current").getLong("dt");
+                    long sunrise =response.getJSONObject("current").getLong("sunrise");
+                    long sunset =response.getJSONObject("current").getLong("sunset");
+                    String iconCode = response.getJSONObject("current").getJSONArray("weather").getJSONObject(0).getString("icon");
+                    String condition = response.getJSONObject("current").getJSONArray("weather").getJSONObject(0).getString("description");
+                    conditionTV.setText(condition);
+                    Picasso.get().load("https://openweathermap.org/img/wn/" + iconCode + "@2x.png").into(iconIV);
+                    boolean isDay;
+                    if(dt-sunrise>0 && dt-sunset<0)
+                    {
+                        Picasso.get().load("https://images.unsplash.com/photo-1603883055407-968560f7522e?q=80&w=1901&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D").into(backIV);
+                    }
+                    else
+                    {
+                        Picasso.get().load("https://images.unsplash.com/photo-1507502707541-f369a3b18502?q=80&w=1976&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D").into(backIV);
+                    }
+                    JSONArray hours = response.optJSONArray("hourly");
+                    if (hours != null) {
+                        int arrayLength = Math.min(hours.length(), 24); // Get the minimum of 24 or the array length
+                        for (int i = 0; i < arrayLength; i++) {
+                            JSONObject hourObj = hours.optJSONObject(i);
+                            if (hourObj != null) {
+                                String hourTemp = String.valueOf(hourObj.optInt("temp"));
+                                String hourWindSpeed = hourObj.optString("wind_speed");
+                                String hourIcon = hourObj.getJSONArray("weather").getJSONObject(0).getString("icon");
+                                Toast.makeText(MainActivity.this,"icon code:" + hourIcon,Toast.LENGTH_SHORT).show();
+                                Long hourTime = hourObj.optLong("dt");
+                                WeatherRVModal m = new WeatherRVModal(hourTime,hourTemp,hourIcon,hourWindSpeed);
+                                WeatherList.add(m);
+                            }
+                        }
+                        WeatherAdapter.notifyDataSetChanged();
+                    } else {
+                        Log.e("TAG", "No 'hourly' array found in JSON response");
+                    }
+
+                    loadingPB.setVisibility(View.GONE);
+                    homeRL.setVisibility(View.VISIBLE);
+
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(MainActivity.this,"Please enter valid city name",Toast.LENGTH_SHORT).show();
+            }
+        });
+        requestQueue.add(jsonObjectRequest);
+
+
+
 
     }
 }
