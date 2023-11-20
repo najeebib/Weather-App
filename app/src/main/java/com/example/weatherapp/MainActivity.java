@@ -51,11 +51,14 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView weatherRV;
     private ArrayList<WeatherRVModal> WeatherList;
     private WeatherRVAdapter WeatherAdapter;
-    private LocationManager locationManager;
     private int location_permission = 1;
     private String CityName;
     private FusedLocationProviderClient fusedLocationClient;
     private ProgressBar loadingPB;
+    private RecyclerView weekRV;
+    private ArrayList<WeekForcastModal> forcastList;
+    private WeekForcastAdapter ForcastAdapter;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +78,10 @@ public class MainActivity extends AppCompatActivity {
         WeatherAdapter = new WeatherRVAdapter(this,WeatherList);
         weatherRV.setAdapter(WeatherAdapter);
         loadingPB = findViewById(R.id.idLoading);
+        weekRV = findViewById(R.id.idRVWeekForcast);
+        forcastList = new ArrayList<WeekForcastModal>();
+        ForcastAdapter = new WeekForcastAdapter(this,forcastList);
+        weekRV.setAdapter(ForcastAdapter);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 

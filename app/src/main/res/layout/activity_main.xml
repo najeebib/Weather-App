@@ -11,13 +11,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/idLoading"
-        android:visibility="visible"
+        android:visibility="gone"
         android:layout_centerInParent="true" />
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/idRLHome"
-        android:visibility="gone">
+        android:visibility="visible">
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -126,6 +126,24 @@
             android:orientation="horizontal"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             android:layout_below="@+id/idToday"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/idTVWeekForcast"
+            android:layout_margin="8dp"
+            android:layout_marginBottom="10dp"
+            android:text="Today's Weather Forcast"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:layout_below="@+id/idRVWeather"/>
+        <androidx.recyclerview.widget.RecyclerView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/idRVWeekForcast"
+            android:orientation="vertical"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            android:layout_below="@+id/idTVWeekForcast"/>
 
 
 
