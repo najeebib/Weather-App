@@ -16,7 +16,7 @@
         <TextView
             android:id="@+id/idDay"
             android:layout_width="0dp"
-            android:layout_weight="1"
+            android:layout_weight="1.4"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:padding="4dp"
@@ -28,7 +28,7 @@
         <ImageView
             android:id="@+id/idIcon"
             android:layout_width="0dp"
-            android:layout_weight="1"
+            android:layout_weight="0.6"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_search"/>
 

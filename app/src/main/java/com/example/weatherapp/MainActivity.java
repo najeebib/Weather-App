@@ -39,6 +39,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -98,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
                         // Got last known location. In some rare situations this can be null.
                         if (location != null) {
                             getWeatherInfo(location.getLatitude(),location.getLongitude());
+                            getForcast(location.getLatitude(),location.getLongitude());
                         }
                     }
                 });
@@ -112,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
                 {
                     CityName = city;
                     getWeatherInfo(city);
+                    getForcast(city);
 
                 }
 
@@ -290,9 +294,143 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+    public static String dtToDay(long epochSeconds) {
+        Date date = new Date(epochSeconds * 1000); // Convert epoch to milliseconds
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+
+        String dayName;
+        switch (dayOfWeek) {
+            case Calendar.SUNDAY:
+                dayName = "Sunday";
+                break;
+            case Calendar.MONDAY:
+                dayName = "Monday";
+                break;
+            case Calendar.TUESDAY:
+                dayName = "Tuesday";
+                break;
+            case Calendar.WEDNESDAY:
+                dayName = "Wednesday";
+                break;
+            case Calendar.THURSDAY:
+                dayName = "Thursday";
+                break;
+            case Calendar.FRIDAY:
+                dayName = "Friday";
+                break;
+            case Calendar.SATURDAY:
+                dayName = "Saturday";
+                break;
+            default:
+                dayName = "Invalid day";
+                break;
+        }
+
+        return dayName;
+    }
     private void getForcast(String cityName)
-    {}
+    {
+        List<Address> addresses;
+        Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
+        try {
+            addresses = geocoder.getFromLocationName(cityName, 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                double latitude = addresses.get(0).getLatitude();
+                double longitude = addresses.get(0).getLongitude();
+
+                double[] coords = new double[]{latitude, longitude};
+                String apiKey =  getResources().getString(R.string.api_endpoint);
+                String url = "https://api.openweathermap.org/data/2.5/forecast?lat="+ coords[0] + "&lon="+ coords[0] +"&appid="+apiKey+"&units=metric";
+                RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+
+                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        forcastList.clear();
+                        try {
+
+                            JSONArray hours = response.optJSONArray("list");
+                            if (hours != null) {
+                                for (int i = 0; i < hours.length(); i+=8) {
+                                    JSONObject hourObj = hours.optJSONObject(i);
+                                    if (hourObj != null) {
+                                        String min = String.valueOf(hourObj.getJSONObject("main").optInt("temp_min"));
+                                        String max = String.valueOf(hourObj.getJSONObject("main").optInt("temp_max"));
+                                        String hourIcon = hourObj.getJSONArray("weather").getJSONObject(0).getString("icon");
+                                        Long hourTime = hourObj.optLong("dt");
+                                        String Day =  dtToDay(hourTime);
+                                        WeekForcastModal modal = new WeekForcastModal(min,max,Day,hourIcon);
+                                        forcastList.add(modal);
+                                    }
+                                }
+                                ForcastAdapter.notifyDataSetChanged();
+                            } else {
+                                Log.e("TAG", "No 'hourly' array found in JSON response");
+                            }
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        //Toast.makeText(MainActivity.this,"Please enter valid city name",Toast.LENGTH_SHORT).show();
+                    }
+                });
+                requestQueue.add(jsonObjectRequest);
+
+            }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
     private void getForcast(double latitude,double longitude)
-    {}
+    {
+        double[] coords = new double[]{latitude, longitude};
+        String apiKey =  getResources().getString(R.string.api_endpoint);
+        String url = "https://api.openweathermap.org/data/2.5/forecast?lat="+ coords[0] + "&lon="+ coords[0] +"&appid="+apiKey+"&units=metric";
+        RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                forcastList.clear();
+                try {
+
+                    JSONArray hours = response.optJSONArray("list");
+                    if (hours != null) {
+                        for (int i = 0; i < hours.length(); i+=8) {
+                            JSONObject hourObj = hours.optJSONObject(i);
+                            if (hourObj != null) {
+                                String min = String.valueOf(hourObj.getJSONObject("main").optInt("temp_min"));
+                                String max = String.valueOf(hourObj.getJSONObject("main").optInt("temp_max"));
+                                String hourIcon = hourObj.getJSONArray("weather").getJSONObject(0).getString("icon");
+                                Long hourTime = hourObj.optLong("dt");
+                                String Day =  dtToDay(hourTime);
+                                WeekForcastModal modal = new WeekForcastModal(min,max,Day,hourIcon);
+                                forcastList.add(modal);
+                            }
+                        }
+                        ForcastAdapter.notifyDataSetChanged();
+                    } else {
+                        Log.e("TAG", "No 'hourly' array found in JSON response");
+                    }
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                //Toast.makeText(MainActivity.this,"Please enter valid city name",Toast.LENGTH_SHORT).show();
+            }
+        });
+        requestQueue.add(jsonObjectRequest);
+    }
 
 }

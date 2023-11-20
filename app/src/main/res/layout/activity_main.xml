@@ -133,7 +133,7 @@
             android:id="@+id/idTVWeekForcast"
             android:layout_margin="8dp"
             android:layout_marginBottom="10dp"
-            android:text="Today's Weather Forcast"
+            android:text="5 Day forcast"
             android:textColor="@color/white"
             android:textStyle="bold"
             android:layout_below="@+id/idRVWeather"/>
