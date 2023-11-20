@@ -290,4 +290,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+    private void getForcast(String cityName)
+    {}
+    private void getForcast(double latitude,double longitude)
+    {}
+
 }
