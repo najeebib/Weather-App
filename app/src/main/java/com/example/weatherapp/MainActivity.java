@@ -61,50 +61,64 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<WeekForcastModal> forcastList;
     private WeekForcastAdapter ForcastAdapter;
 
-
+    // This function initializes UI components, requests location permissions, retrieves location, and sets up event listeners.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        //RelativeLayout for the main UI.
         homeRL = findViewById(R.id.idRLHome);
+        //TextView displaying the city name.
         cityNameTV = findViewById(R.id.idTVCityName);
+        //TextView showing the temperature.
         tempTV = findViewById(R.id.idtemp);
+        //TextView displaying the weather condition.
+        //TextInputEditText for entering a city name.
         conditionTV = findViewById(R.id.idTVCondition); 
         cityEdt = findViewById(R.id.idEdtCity);
+        //iconIV: ImageViews for background and weather icons.
         backIV = findViewById(R.id.idBack);
         iconIV = findViewById(R.id.idIVIcon);
         searchIV = findViewById(R.id.idSearch);
+        //RecyclerView for hourly weather data.
         weatherRV = findViewById(R.id.idRVWeather);
+        //ArrayList for storing hourly weather data.
         WeatherList  = new ArrayList<WeatherRVModal>();
+        //Adapter for hourly weather RecyclerView.
         WeatherAdapter = new WeatherRVAdapter(this,WeatherList);
         weatherRV.setAdapter(WeatherAdapter);
+        //ProgressBar for loading indication.
         loadingPB = findViewById(R.id.idLoading);
+        //RecyclerView for 5 day forecast.
         weekRV = findViewById(R.id.idRVWeekForcast);
+        //ArrayList for storing weekly forecast data.
         forcastList = new ArrayList<WeekForcastModal>();
+        //Adapter for weekly forecast RecyclerView.
         ForcastAdapter = new WeekForcastAdapter(this,forcastList);
         weekRV.setAdapter(ForcastAdapter);
-
+        //FusedLocationProviderClient for location services
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-
+        // check for user permissions
         if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED&&
                 ActivityCompat.checkSelfPermission(this,android.Manifest.permission.ACCESS_COARSE_LOCATION)!= PackageManager.PERMISSION_GRANTED)
         {
             ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},location_permission);
         }
+        // get the location of the suer
         fusedLocationClient.getLastLocation()
                 .addOnSuccessListener(this, new OnSuccessListener<Location>() {
                     @Override
                     public void onSuccess(Location location) {
                         // Got last known location. In some rare situations this can be null.
                         if (location != null) {
+                            // show the weather data for user's current location
                             getWeatherInfo(location.getLatitude(),location.getLongitude());
                             getForcast(location.getLatitude(),location.getLongitude());
                         }
                     }
                 });
-
+        //Users can enter a city name in the cityEdt field and click the search button (searchIV) to fetch weather information for that city.
         searchIV.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -140,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
+    //this function retrieves the weather information, parses it and displays it on screen
     private void getWeatherInfo(String cityName)
     {
         List<Address> addresses;
@@ -224,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+    ///this function retrieves the weather information, parses it and displays it on screen
     private void getWeatherInfo(double latitude,double longitude)
     {
 
@@ -294,6 +309,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+    //this function converts time in epoch format to datetime and returns the day of the week
     public static String dtToDay(long epochSeconds) {
         Date date = new Date(epochSeconds * 1000); // Convert epoch to milliseconds
         Calendar calendar = Calendar.getInstance();
@@ -330,6 +346,7 @@ public class MainActivity extends AppCompatActivity {
 
         return dayName;
     }
+    //This function retrieves the 5 day forecast and displays it on screen
     private void getForcast(String cityName)
     {
         List<Address> addresses;
@@ -388,6 +405,7 @@ public class MainActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         }
     }
+    //This function retrieves the 5 day forecast and displays it on screen
     private void getForcast(double latitude,double longitude)
     {
         double[] coords = new double[]{latitude, longitude};
